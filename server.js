@@ -77,58 +77,30 @@ readAllFile
             data[numLinea].length - 2
           );
           lineaSplit = data[numLinea].split(",");
+
+
           afData.set(lineaSplit[4], data[numLinea]);
         }
       }
 
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AC")
-      ).then((data) => {
-        acData = data;
-      });
-
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AH")
-      ).then((data) => {
-        ahData = data;
-      });
-
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AM")
-      ).then((data) => {
-        amData = data;
-      });
-
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AN")
-      ).then((data) => {
-        anData = data;
-      });
-
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AP")
-      ).then((data) => {
-        apData = data;
-      });
-
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AT")
-      ).then((data) => {
-        atData = data;
-      });
     
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "AU")
-      ).then((data) => {
-        auData = data;
-      });
+    
 
-      readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "US")
-      ).then((data) => {
-        usData = data;
+      Promise.all([
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AC")),
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AH")), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AM")), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AN")), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AP")),
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AT")), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AU")),
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "US"))]).then(maps => { 
+        console.log(maps);
+      }, reason => {
+        console.log(reason)
       });
-      
+     
+
     } catch (e) {
       console.log("Error:", e.stack);
     }
