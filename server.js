@@ -40,7 +40,7 @@ const crearArchivo = (path, fileName, value) => new Promise ((resolve, reject)  
     fs.mkdirSync(dir);
   }
 
-  fs.writeFile( path + fileName, value, function (err) {
+    fs.writeFile( path + fileName, value, function (err) {
     if (err) return console.log(err);
   });
 })
