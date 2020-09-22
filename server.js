@@ -31,7 +31,7 @@ let readAllFile = new Promise((resolve, reject) => {
 /**
  * Promesa que recorre las lineas de un archivo y lo convierte en un map
  */
-const readAditionalFiles = (file) =>
+const readAditionalFiles = (file, index) =>
   new Promise(function (resolve, reject) {
     var data = fs
       .readFileSync("files/" + file, "utf8")
@@ -42,14 +42,28 @@ const readAditionalFiles = (file) =>
       if (data[numLinea] != "") {
             data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
             lineaSplit = data[numLinea].split(",");
-            newMap.set(lineaSplit[0], data[numLinea]);
+
+            var findLine = newMap.get(lineaSplit[0]);
+            console.log(findLine);
+            if(findLine == undefined){
+                newMap.set(lineaSplit[index], {text: data[numLinea], count: 1});
+            }
+            else
+            {
+                findLine.text = findLine.text.toString() + "\n" + data[numLinea].toString();
+                newMap.set(lineaSplit[index],  {text: data[numLinea], count: findLine.count+1});
+            }
+          
       }
     }
-    resolve(newMap);
+    resolve({"file" : file.substr(0,2) , data: newMap});
   });
 
 
 
+
+
+  
 /**
  * Controlador principal a partir del archivo ac
  */
@@ -87,14 +101,13 @@ readAllFile
     
 
       Promise.all([
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AC")),
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AH")), 
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AM")), 
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AN")), 
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AP")),
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AT")), 
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AU")),
-      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "US"))]).then(maps => { 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AC"),0),
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AH"),0), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AM"),0), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AN"),0), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AP"),0),
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AT"),0), 
+      readAditionalFiles(files.find((fileName) => fileName.substr(0, 2) == "AU"),0)]).then(maps => { 
         console.log(maps);
       }, reason => {
         console.log(reason)
