@@ -3,13 +3,18 @@ const path = require("path");
 const fs = require("fs");
 const rimraf = require("rimraf");
 const utf8 = require('utf8');
-const async = require("async")
+var Filequeue = require('filequeue');
+var fq = new Filequeue(50);
 var filesCreator = [];
 const { dir } = require("console");
 const testFolder = "files/";
 const requiredFiles = ["AC", "AH", "AF", "AM", "AP", "AN", "AU", "AT"];
 var afData = new Map();
 var usData = new Map();
+
+const listFacts = [];//["1822", "310897"];
+
+
 let readAllFile = new Promise((resolve, reject) => {
   main = this;
   var totalFiles = [];
@@ -36,24 +41,33 @@ let readAllFile = new Promise((resolve, reject) => {
  */
 
 const crearArchivo = (array) => new Promise ((resolve, reject)  => {
-  console.log(array);
+ // console.log(array);
 
   for(var file =0; file < array.length; file++)
   {
-       escribirArchivo(array[file].folder, array[file].fileName, array[file].data);
+    
+       escribirArchivo(array[file].folder, array[file].fileName, array[file].data).then(function()
+       {
+     
+       });
+       
   }
 
 });
  
 const  escribirArchivo = async(path, fileName, value) => new Promise ((resolve, reject)=>{
   var dir = path;
+  if (!fs.existsSync("results")) {
+    fs.mkdirSync("results");
+  }
+
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
   }
-
-    fs.writeFile( path + fileName, value, function (err) {
+  
+    fq.writeFile( path + fileName, value, function (err) {
     if (err) return console.log(err);
-   
+  
   });
 });
 
@@ -115,7 +129,7 @@ const readAditionalFiles = (file, index) =>
  */
 readAllFile
   .then((files) => {
-    
+   // console.time(1);
     var AF = files.data.find((fileName) => fileName.substr(0, 2) == "AF");
 
     try {
@@ -125,13 +139,25 @@ readAllFile
         .toString()
         .split("\n");
       for (var numLinea = 0; numLinea < data.length; numLinea++) {
+        
+       
+
         if (data[numLinea] != "") {
           data[numLinea] = data[numLinea].substring(
             0,
             data[numLinea].length - 2
           );
           lineaSplit = data[numLinea].split(",");
-
+          if(listFacts.length > 0)
+          {
+            const findAf = listFacts.find(element => element == lineaSplit[4]);//lineaSplit[4]);
+           // console.log(findAf);
+            if(!findAf)
+            {
+              continue;
+            }
+          }
+         
           afData.set(lineaSplit[4], {data: data[numLinea], users: new Map(), date: lineaSplit[5], habCode: lineaSplit[0]});
         }
       }
@@ -186,7 +212,7 @@ readAllFile
                       var lineCt = "";
                      // crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
                       lineCt = value.habCode + "," + value.date + ",AF" + key+ ",1";
-                    
+                      filesCreator.push({folder:"results/" + key, fileName: "/AF" + key + ".txt", data: value.data});
                       for(var $fileReader = 0; $fileReader < maps.length; $fileReader++)
                       {
                         let data = maps[$fileReader].data.get(key);
