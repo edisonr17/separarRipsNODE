@@ -33,6 +33,19 @@ let readAllFile = new Promise((resolve, reject) => {
 /**
  * Promesa que recorre las lineas de un archivo y lo convierte en un map
  */
+
+const crearArchivo = (path, fileName, value) => new Promise ((resolve, reject)  => {
+  var dir = path;
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir);
+  }
+
+  fs.writeFile( path + fileName, value, function (err) {
+    if (err) return console.log(err);
+  });
+})
+ 
+
 const readAditionalFiles = (file, index) =>
   new Promise(function (resolve, reject) {
     var data = fs
@@ -148,17 +161,12 @@ readAllFile
           ),
         ]).then(
           (maps) => {
-             
-            const crearArchivo = (path, fileName, value) => {
-              var dir = path;
-              if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir);
-              }
+             console.log();
+           
 
-              fs.writeFile( path + fileName, value, function (err) {
-                if (err) return console.log(err);
-              });
-            };
+
+
+
                   //  fsExtra.emptyDirSync("results");
                   rimraf("results/*", function () {
                     console.log("Borrando directorio");
@@ -184,7 +192,7 @@ readAllFile
                           crearArchivo("results/" + key, "/"+  maps[$fileReader].file + key + ".txt", "");
                         }
                       }
-                      console.log(lineCt);
+                     // console.log(lineCt);
                    // console.log(afData.get("46091"));
                   
                   //    
@@ -193,14 +201,19 @@ readAllFile
                   let countUsers = 0;
                        for(let [keyUser, user] of value.users)
                        {
-                         if(keyUser == 0)
+                         console.log(value.users);
+                         if(user != undefined)
                          {
-                          usersPrinter = user.text;
+                          if(keyUser == 0)
+                          {
+                           usersPrinter = user.text;
+                          }
+                          else
+                          {
+                           usersPrinter = usersPrinter + user.text + "\n";
+                          }
                          }
-                         else
-                         {
-                          usersPrinter = usersPrinter + user.text + "\n";
-                         }
+                        
                          countUsers ++;
                        } 
 
