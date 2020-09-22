@@ -3,7 +3,8 @@ const path = require("path");
 const fs = require("fs");
 const rimraf = require("rimraf");
 const utf8 = require('utf8');
-
+const async = require("async")
+var filesCreator = [];
 const { dir } = require("console");
 const testFolder = "files/";
 const requiredFiles = ["AC", "AH", "AF", "AM", "AP", "AN", "AU", "AT"];
@@ -34,7 +35,17 @@ let readAllFile = new Promise((resolve, reject) => {
  * Promesa que recorre las lineas de un archivo y lo convierte en un map
  */
 
-const crearArchivo = (path, fileName, value) => new Promise ((resolve, reject)  => {
+const crearArchivo = (array) => new Promise ((resolve, reject)  => {
+  console.log(array);
+
+  for(var file =0; file < array.length; file++)
+  {
+       escribirArchivo(array[file].folder, array[file].fileName, array[file].data);
+  }
+
+});
+ 
+const  escribirArchivo = async(path, fileName, value) => new Promise ((resolve, reject)=>{
   var dir = path;
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir);
@@ -42,8 +53,10 @@ const crearArchivo = (path, fileName, value) => new Promise ((resolve, reject)  
 
     fs.writeFile( path + fileName, value, function (err) {
     if (err) return console.log(err);
+   
   });
-})
+});
+
  
 
 const readAditionalFiles = (file, index) =>
@@ -163,17 +176,15 @@ readAllFile
           (maps) => {
              console.log();
            
-
-
-
-
-                  //  fsExtra.emptyDirSync("results");
-                  rimraf("results/*", function () {
+             const dynamicCreateFiles = (array, maps) => new Promise(function(resolve, reject){
+                 
+                   //  fsExtra.emptyDirSync("results");
+                   rimraf("results/*", function () {
                     console.log("Borrando directorio");
                  
-                    for (let [key, value] of afData) {
+                    for (let [key, value] of array) {
                       var lineCt = "";
-                      crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
+                     // crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
                       lineCt = value.habCode + "," + value.date + ",AF" + key+ ",1";
                     
                       for(var $fileReader = 0; $fileReader < maps.length; $fileReader++)
@@ -184,12 +195,11 @@ readAllFile
                           if(data.count > 0){
                             lineCt =lineCt + "\n"+ value.habCode + "," + value.date + ","+maps[$fileReader].file + key+ ","+data.count;
                           }
-
-                          crearArchivo("results/" + key, "/"+  maps[$fileReader].file + key + ".txt", data.text);
+                          filesCreator.push({folder:"results/" + key, fileName: "/"+  maps[$fileReader].file + key + ".txt", data: data.text});
                         }
                         else
                         {
-                          crearArchivo("results/" + key, "/"+  maps[$fileReader].file + key + ".txt", "");
+                          filesCreator.push({folder:"results/" + key, fileName: "/"+  maps[$fileReader].file + key + ".txt",  data:""});
                         }
                       }
                      // console.log(lineCt);
@@ -201,7 +211,7 @@ readAllFile
                   let countUsers = 0;
                        for(let [keyUser, user] of value.users)
                        {
-                         console.log(value.users);
+                       //  console.log(value.users);
                          if(user != undefined)
                          {
                           if(keyUser == 0)
@@ -217,15 +227,28 @@ readAllFile
                          countUsers ++;
                        } 
 
-                       crearArchivo("results/" + key, "/"+  "US" + key + ".txt", usersPrinter);
+                       filesCreator.push({folder:"results/" + key, fileName:"/"+  "US" + key + ".txt", data: usersPrinter});
                        lineCt =lineCt + "\n"+ value.habCode + "," + value.date + ",US" + key+ ","+countUsers;
 
-                       crearArchivo("results/" + key, "/"+  "CT" + key + ".txt", lineCt);
+                       filesCreator.push({folder:"results/" + key, fileName:"/"+  "CT" + key + ".txt", data: lineCt});
                        countUsers = 0;
                        usersPrinter = "";
-                      // console.log(afData);
+                      
                     }
+                   // console.log(filesCreator);
+                   resolve(filesCreator);
                   });
+                  
+
+                  
+             }); 
+
+             dynamicCreateFiles(afData, maps).then(function(filesCreator)
+             {
+                crearArchivo(filesCreator, 0);
+             });
+
+               
           },
           (reason) => {
             console.log(reason);
