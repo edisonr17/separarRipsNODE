@@ -289,11 +289,3 @@ readAllFile
     console.log(err);
   });
 
-/*const createServer = () => {
-    http.createServer(function (req, res) {
-        res.writeHead(200, {'Content-Type': 'text/plain'});
-
-    }).listen(8080);
-}*/
-
-//createServer();
