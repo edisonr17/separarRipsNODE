@@ -26,7 +26,7 @@ let readAllFile = new Promise((resolve, reject) => {
         reject("No se encontró creado el archivo " + pre);
       }
     });
-    resolve(files);
+    resolve({data:files, users:  new Map()});
   });
 });
 
@@ -53,10 +53,32 @@ const readAditionalFiles = (file, index) =>
           findLine.text =
             findLine.text.toString() + "\n" + data[numLinea].toString();
           newMap.set(lineaSplit[index], {
-            text: data[numLinea],
+            text: findLine.text,
             count: findLine.count + 1,
           });
         }
+
+        if(index == 0)
+        {
+         
+          let fact = afData.get(lineaSplit[index]);
+        
+      //    console.log(users, file.substr(0, 2));
+         
+          if(fact != undefined)
+          {
+         
+            let factUsers = fact.users.get(lineaSplit[3]);
+
+           
+           
+              afData.get(lineaSplit[index]).users.set(lineaSplit[3], usData.data.get(lineaSplit[3]));
+             
+            
+
+          }
+        }
+
       }
     }
     resolve({ file: file.substr(0, 2), data: newMap });
@@ -67,7 +89,8 @@ const readAditionalFiles = (file, index) =>
  */
 readAllFile
   .then((files) => {
-    var AF = files.find((fileName) => fileName.substr(0, 2) == "AF");
+    
+    var AF = files.data.find((fileName) => fileName.substr(0, 2) == "AF");
 
     try {
       // var data = fs.readFileSync( 'utf8');
@@ -83,12 +106,12 @@ readAllFile
           );
           lineaSplit = data[numLinea].split(",");
 
-          afData.set(lineaSplit[4], data[numLinea]);
+          afData.set(lineaSplit[4], {data: data[numLinea], users: new Map(), date: lineaSplit[5], habCode: lineaSplit[0]});
         }
       }
-      console.log(afData);
+      //console.log(afData);
       readAditionalFiles(
-        files.find((fileName) => fileName.substr(0, 2) == "US"),
+        files.data.find((fileName) => fileName.substr(0, 2) == "US"),
         1
       ).then((usMap) => {
         usData = usMap;
@@ -96,36 +119,36 @@ readAllFile
 
         Promise.all([
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AC"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AC"),
             0
           ),
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AH"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AH"),
             0
           ),
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AM"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AM"),
             0
           ),
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AN"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AN"),
             0
           ),
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AP"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AP"),
             0
           ),
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AT"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AT"),
             0
           ),
           readAditionalFiles(
-            files.find((fileName) => fileName.substr(0, 2) == "AU"),
+            files.data.find((fileName) => fileName.substr(0, 2) == "AU"),
             0
           ),
         ]).then(
           (maps) => {
-           // console.log(maps);
+             
             const crearArchivo = (path, fileName, value) => {
               var dir = path;
               if (!fs.existsSync(dir)) {
@@ -139,13 +162,21 @@ readAllFile
                   //  fsExtra.emptyDirSync("results");
                   rimraf("results/*", function () {
                     console.log("Borrando directorio");
+                 
                     for (let [key, value] of afData) {
-                      crearArchivo("results/" + key, "/AF" + key + ".txt", value);
-
+                      var lineCt = "";
+                      crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
+                      lineCt = value.habCode + "," + value.date + ",AF" + key+ ",1";
+                    
                       for(var $fileReader = 0; $fileReader < maps.length; $fileReader++)
                       {
                         let data = maps[$fileReader].data.get(key);
+                      
                         if(data != undefined){
+                          if(data.count > 0){
+                            lineCt =lineCt + "\n"+ value.habCode + "," + value.date + ","+maps[$fileReader].file + key+ ","+data.count;
+                          }
+
                           crearArchivo("results/" + key, "/"+  maps[$fileReader].file + key + ".txt", data.text);
                         }
                         else
@@ -153,12 +184,33 @@ readAllFile
                           crearArchivo("results/" + key, "/"+  maps[$fileReader].file + key + ".txt", "");
                         }
                       }
-                    
-                   
-
-
+                      console.log(lineCt);
+                   // console.log(afData.get("46091"));
+                  
                   //    
 
+                  let usersPrinter = "";
+                  let countUsers = 0;
+                       for(let [keyUser, user] of value.users)
+                       {
+                         if(keyUser == 0)
+                         {
+                          usersPrinter = user.text;
+                         }
+                         else
+                         {
+                          usersPrinter = usersPrinter + user.text + "\n";
+                         }
+                         countUsers ++;
+                       } 
+
+                       crearArchivo("results/" + key, "/"+  "US" + key + ".txt", usersPrinter);
+                       lineCt =lineCt + "\n"+ value.habCode + "," + value.date + ",US" + key+ ","+countUsers;
+
+                       crearArchivo("results/" + key, "/"+  "CT" + key + ".txt", lineCt);
+                       countUsers = 0;
+                       usersPrinter = "";
+                      // console.log(afData);
                     }
                   });
           },
