@@ -12,9 +12,18 @@ const requiredFiles = ["AC", "AH", "AF", "AM", "AP", "AN", "AU", "AT"];
 var afData = new Map();
 var usData = new Map();
 
+/**
+** Aquí termina la inclusión de las librerias necesarias
+*/
+
+// Array que contiene el listado de facturas ___ PENDIENTE DE USO
 const listFacts = [];//["1822", "310897"];
 
 
+
+/** 
+* Método que permite identificar si falta algun archivo en la definición 
+*/
 let readAllFile = new Promise((resolve, reject) => {
   main = this;
   var totalFiles = [];
@@ -37,24 +46,29 @@ let readAllFile = new Promise((resolve, reject) => {
 });
 
 /**
- * Promesa que recorre las lineas de un archivo y lo convierte en un map
- */
+*TERMINA IDENTIFICACIÓN DE ARCHIVOS
+*/
+
+
+/**
+* PERMITE CREAR UN ARCHIVO por elemento de un array
+*/
 
 const crearArchivo = (array) => new Promise ((resolve, reject)  => {
  // console.log(array);
 
   for(var file =0; file < array.length; file++)
   {
-    
-       escribirArchivo(array[file].folder, array[file].fileName, array[file].data).then(function()
-       {
-     
+       escribirArchivo(array[file].folder, array[file].fileName, array[file].data).then(function(){
        });
-       
   }
-
 });
  
+
+
+/**
+ * Escribe el archivo
+ */
 const  escribirArchivo = async(path, fileName, value) => new Promise ((resolve, reject)=>{
   var dir = path;
   if (!fs.existsSync("results")) {
@@ -72,15 +86,17 @@ const  escribirArchivo = async(path, fileName, value) => new Promise ((resolve, 
 });
 
  
-
+/**
+ * Metodo que recorre un archivo y lo agrupa por un indice en un archivo
+ */
 const readAditionalFiles = (file, index) =>
   new Promise(function (resolve, reject) {
-    var data = fs
-      .readFileSync("files/" + file, "latin1")
-      .toString()
-      .split("\n");
+    var data = fs.readFileSync("files/" + file, "latin1").toString().split("\n");
     var newMap = new Map();
+
+    //Recorremos linea a linea un archivo plano
     for (var numLinea = 0; numLinea < data.length; numLinea++) {
+      //Validamos que la linea no esté vacía
       if (data[numLinea] != "") {
         data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
         lineaSplit = data[numLinea].split(",");
@@ -90,35 +106,20 @@ const readAditionalFiles = (file, index) =>
         if (findLine == undefined) {
           newMap.set(lineaSplit[index], { text: data[numLinea], count: 1 });
         } else {
-          findLine.text =
-            findLine.text.toString() + "\n" + data[numLinea].toString();
+          findLine.text =  findLine.text.toString() + "\n" + data[numLinea].toString();
           newMap.set(lineaSplit[index], {
             text: findLine.text,
             count: findLine.count + 1,
           });
         }
 
-        if(index == 0)
-        {
-         
-          let fact = afData.get(lineaSplit[index]);
-        
-      //    console.log(users, file.substr(0, 2));
-         
-          if(fact != undefined)
-          {
-         
+        if(index == 0){
+          let fact = afData.get(lineaSplit[index]);   
+          if(fact != undefined){
             let factUsers = fact.users.get(lineaSplit[3]);
-
-           
-           
-              afData.get(lineaSplit[index]).users.set(lineaSplit[3], usData.data.get(lineaSplit[3]));
-             
-            
-
+            afData.get(lineaSplit[index]).users.set(lineaSplit[3], usData.data.get(lineaSplit[3]));
           }
         }
-
       }
     }
     resolve({ file: file.substr(0, 2), data: newMap });
@@ -134,19 +135,11 @@ readAllFile
 
     try {
       // var data = fs.readFileSync( 'utf8');
-      var data = fs
-        .readFileSync("files/" + AF, "latin1")
-        .toString()
-        .split("\n");
+      var data = fs.readFileSync("files/" + AF, "latin1").toString().split("\n");
       for (var numLinea = 0; numLinea < data.length; numLinea++) {
         
-       
-
         if (data[numLinea] != "") {
-          data[numLinea] = data[numLinea].substring(
-            0,
-            data[numLinea].length - 2
-          );
+          data[numLinea] = data[numLinea].substring(0,  data[numLinea].length - 2);
           lineaSplit = data[numLinea].split(",");
           if(listFacts.length > 0)
           {
@@ -157,47 +150,24 @@ readAllFile
               continue;
             }
           }
-         
           afData.set(lineaSplit[4], {data: data[numLinea], users: new Map(), date: lineaSplit[5], habCode: lineaSplit[0]});
         }
       }
       //console.log(afData);
       readAditionalFiles(
-        files.data.find((fileName) => fileName.substr(0, 2) == "US"),
-        1
+        files.data.find((fileName) => fileName.substr(0, 2) == "US"), 1
       ).then((usMap) => {
         usData = usMap;
         //  console.log(usData);
 
         Promise.all([
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AC"),
-            0
-          ),
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AH"),
-            0
-          ),
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AM"),
-            0
-          ),
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AN"),
-            0
-          ),
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AP"),
-            0
-          ),
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AT"),
-            0
-          ),
-          readAditionalFiles(
-            files.data.find((fileName) => fileName.substr(0, 2) == "AU"),
-            0
-          ),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AC"), 0),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AH"), 0),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AM"), 0),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AN"), 0),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AP"), 0),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AT"), 0),
+          readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AU"), 0),
         ]).then(
           (maps) => {
              console.log();
