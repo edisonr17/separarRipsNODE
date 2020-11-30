@@ -97,9 +97,14 @@ const readAditionalFiles = (file, index) =>
     for (var numLinea = 0; numLinea < data.length; numLinea++) {
       //Validamos que la linea no esté vacía
       if (data[numLinea] != "") {
-        data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
+        data[numLinea] = data[numLinea].substring(0, data[numLinea].length );
         lineaSplit = data[numLinea].split(",");
-
+      
+        if(file == "US003291.txt")
+        {
+          //console.log( data[numLinea]);
+        }
+       
         var findLine = newMap.get(lineaSplit[0]);
         //  console.log(findLine);
         
@@ -156,6 +161,7 @@ readAllFile
         if (data[numLinea] != "") {
           data[numLinea] = data[numLinea].substring(0,  data[numLinea].length - 2);
           lineaSplit = data[numLinea].split(",");
+          //console.log(lineaSplit);
           if(listFacts.length > 0)
           {
             const findAf = listFacts.find(element => element == lineaSplit[4]);//lineaSplit[4]);
@@ -171,7 +177,7 @@ readAllFile
       //console.log(afData);
       readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "US"), 1).then((usMap) => {
         usData = usMap;
-        //  console.log(usData);
+         // console.log(usData);
 
         Promise.all([
           readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AC"), 0),
@@ -226,7 +232,7 @@ readAllFile
                   let countUsers = 0;
                        for(let [keyUser, user] of value.users)
                        {
-                         console.log(user.text);
+                        // console.log(user.text);
                          let explit = user.text.split(",");
                          user.text = user.text.replace(explit[1], "VEN"+explit[1]);
                          if(user != undefined)
