@@ -7,8 +7,9 @@ var Filequeue = require('filequeue');
 var fq = new Filequeue(50);
 var filesCreator = [];
 const { dir } = require("console");
+const { isRegExp } = require("util");
 const testFolder = "files/";
-const requiredFiles = ["AC", "AH", "AF", "AM", "AP", "AN", "AU", "AT"];
+const requiredFiles = ["AC",  "AH", "AF", "AM", "AP", "AN", "AU", "AT"];
 var afData = new Map();
 var usData = new Map();
 var extrangeros = new Map();
@@ -17,7 +18,7 @@ var extrangeros = new Map();
 */
 
 // Array que contiene el listado de facturas ___ PENDIENTE DE USO
-const listFacts = ["27048"];//["1822", "310897"];
+const listFacts = [""];//["1822", "310897"];
 
 
 
@@ -93,30 +94,38 @@ const readAditionalFiles = (file, index) =>
     var data = fs.readFileSync("files/" + file, "latin1").toString().split("\n");
     var newMap = new Map();
 
-    //Recorremos linea a linea un archivo plano
+   
     for (var numLinea = 0; numLinea < data.length; numLinea++) {
       //Validamos que la linea no esté vacía
       if (data[numLinea] != "") {
         data[numLinea] = data[numLinea].substring(0, data[numLinea].length );
         lineaSplit = data[numLinea].split(",");
+        
+
+         //Recorremos linea a linea un archivo plano
+         var findLine = newMap.get(lineaSplit[0]);
+
+
       
-        if(file == "US003291.txt")
-        {
-          //console.log( data[numLinea]);
-        }
        
-        var findLine = newMap.get(lineaSplit[0]);
-        //  console.log(findLine);
+         if(file == "US001.txt" && lineaSplit[indexDocumentType] == "CE"){
+          //console.log(file, index);
+         // console.log(lineaSplit);
+        }
         
         var indexDocumentType = (index == 0) ? 2: 0; 
       
         if(lineaSplit[indexDocumentType] == "CE" || lineaSplit[indexDocumentType] == "PE" || lineaSplit[indexDocumentType] == "PA")
         {
+          if(file == "US001.txt" && lineaSplit[indexDocumentType] == "CE"){
+           // console.log(file, indexDocumentType);
+           // console.log(lineaSplit);
+          }
           if(indexDocumentType == 2){
             extrangeros.set(lineaSplit[index], true);
            data[numLinea] = data[numLinea].toString().replace(lineaSplit[indexDocumentType+1],"VEN"+lineaSplit[indexDocumentType+1]);
           }
- 
+
           if (findLine == undefined) {
             newMap.set(lineaSplit[index], { text: data[numLinea], count: 1 });
           } else {
@@ -142,6 +151,8 @@ const readAditionalFiles = (file, index) =>
         }
       }
     }
+
+  
     resolve({ file: file.substr(0, 2), data: newMap });
   });
 
@@ -157,27 +168,32 @@ readAllFile
       // var data = fs.readFileSync( 'utf8');
       var data = fs.readFileSync("files/" + AF, "latin1").toString().split("\n");
       for (var numLinea = 0; numLinea < data.length; numLinea++) {
-        
+            
+     
         if (data[numLinea] != "") {
+         
           data[numLinea] = data[numLinea].substring(0,  data[numLinea].length - 2);
           lineaSplit = data[numLinea].split(",");
-          //console.log(lineaSplit);
+        
+
           if(listFacts.length > 0)
           {
             const findAf = listFacts.find(element => element == lineaSplit[4]);//lineaSplit[4]);
-           // console.log(findAf);
+            //console.log(findAf);
             if(!findAf)
             {
-              continue;
+              ;
             }
           }
+          //console.log(lineaSplit);
           afData.set(lineaSplit[4], {data: data[numLinea], users: new Map(), date: lineaSplit[5], habCode: lineaSplit[0]});
+          //console.log(afData);
         }
       }
-      //console.log(afData);
+  
       readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "US"), 1).then((usMap) => {
         usData = usMap;
-         // console.log(usData);
+       // console.log("aqui",usData);
 
         Promise.all([
           readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AC"), 0),
@@ -189,14 +205,14 @@ readAllFile
           readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AU"), 0),
         ]).then(
           (maps) => {
-             console.log();
-           
+            
              const dynamicCreateFiles = (array, maps) => new Promise(function(resolve, reject){
                  
                    //  fsExtra.emptyDirSync("results");
                    rimraf("results/*", function () {
                     console.log("Borrando directorio");
-                 
+                   
+
                     for (let [key, value] of array) {
                       var lineCt = "";
                      // crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
@@ -208,6 +224,7 @@ readAllFile
                      }
                       lineCt = value.habCode + "," + value.date + ",AF" + key+ ",1";
                       filesCreator.push({folder:"results/" + key, fileName: "/AF" + key + ".txt", data: value.data});
+                     // console.log(maps);
                       for(var $fileReader = 0; $fileReader < maps.length; $fileReader++)
                       {
                         let data = maps[$fileReader].data.get(key);
@@ -232,7 +249,7 @@ readAllFile
                   let countUsers = 0;
                        for(let [keyUser, user] of value.users)
                        {
-                        // console.log(user.text);
+                        // console.log(user);
                          let explit = user.text.split(",");
                          user.text = user.text.replace(explit[1], "VEN"+explit[1]);
                          if(user != undefined)
@@ -264,7 +281,7 @@ readAllFile
 
                   
              }); 
-
+            // console.log("Aqui",afData)
              dynamicCreateFiles(afData, maps).then(function(filesCreator)
              {
                 crearArchivo(filesCreator, 0);
