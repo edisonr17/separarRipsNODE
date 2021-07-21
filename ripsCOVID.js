@@ -158,8 +158,20 @@ const readAditionalFiles = (file, index) =>
 				data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
 				lineaSplit = data[numLinea].split(",");
 
-				if (file.substr(0, 2) == "AC"  || file.substr(0, 2) == "AH" || file.substr(0, 2) == "AP") {
+				if (file.substr(0, 2) == "AC"  || file.substr(0, 2) == "AH" ) {
 					if (diagCOVID.includes(lineaSplit[9]) || diagCOVID.includes(lineaSplit[10]), diagCOVID.includes(lineaSplit[11])) {
+						if (!facturasCovidDetectadas.includes(lineaSplit[0])) {
+							facturasCovidDetectadas.push(lineaSplit[0]);
+						}
+
+						if (!usuariosCovid.includes(lineaSplit[3])) {
+							usuariosCovid.push(lineaSplit[3]);
+						}
+					}
+				}
+
+				if (file.substr(0, 2) == "AP" ) {
+					if (diagCOVID.includes(lineaSplit[10]) || diagCOVID.includes(lineaSplit[11]), diagCOVID.includes(lineaSplit[12])) {
 						if (!facturasCovidDetectadas.includes(lineaSplit[0])) {
 							facturasCovidDetectadas.push(lineaSplit[0]);
 						}
@@ -267,18 +279,18 @@ readAllFile
 									var lineCt = "";
 									// crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
 									lineCt = value.habCode + "," + value.date + ",AF" + key + ",1";
-									filesCreator.push({ folder: "results/" + key, fileName: "/AF" + key + ".txt", data: value.data });
+									filesCreator.push({ folder: "results/" , fileName: "/AF" + key + ".txt", data: value.data });
 									for (var $fileReader = 0; $fileReader < maps.length; $fileReader++) {
 										let data = maps[$fileReader].data.get(key);
 
 										if (data != undefined) {
 											if (data.count > 0) {
-												lineCt = lineCt + "\n" + value.habCode + "," + value.date + "," + maps[$fileReader].file + key + "," + data.count;
+												lineCt = lineCt + "\n\r" + value.habCode + "," + value.date + "," + maps[$fileReader].file + key + "," + data.count;
 											}
-											filesCreator.push({ folder: "results/" + key, fileName: "/" + maps[$fileReader].file + key + ".txt", data: data.text });
+											filesCreator.push({ folder: "results/" , fileName: "/" + maps[$fileReader].file + key + ".txt", data: data.text });
 										}
 										else {
-											filesCreator.push({ folder: "results/" + key, fileName: "/" + maps[$fileReader].file + key + ".txt", data: "" });
+											filesCreator.push({ folder: "results/" , fileName: "/" + maps[$fileReader].file + key + ".txt", data: "" });
 										}
 									}
 									// console.log(lineCt);
@@ -303,10 +315,10 @@ readAllFile
 										countUsers++;
 									}
 
-									filesCreator.push({ folder: "results/" + key, fileName: "/" + "US" + key + ".txt", data: usersPrinter });
+									filesCreator.push({ folder: "results/" , fileName: "/" + "US" + key + ".txt", data: usersPrinter });
 									lineCt = lineCt + "\n" + value.habCode + "," + value.date + ",US" + key + "," + countUsers;
 
-									filesCreator.push({ folder: "results/" + key, fileName: "/" + "CT" + key + ".txt", data: lineCt });
+									filesCreator.push({ folder: "results/" , fileName: "/" + "CT" + key + ".txt", data: lineCt });
 									countUsers = 0;
 									usersPrinter = "";
 
