@@ -4,16 +4,19 @@ const fs = require("fs");
 const rimraf = require("rimraf");
 const utf8 = require('utf8');
 var Filequeue = require('filequeue');
-var fq = new Filequeue(50);
+var moment = require('moment');
 var filesCreator = [];
 const { dir } = require("console");
-const testFolder = "files/";
-const requiredFiles = ["AC", "AH", "AF", "AM", "AP", "AN", "AU", "AT"];
+
+
+const { CONFIGURACIONES } = require("./business/config.js");
+const { funcionesArchivosPlanos } = require("./business/operacionesArchivosPlanos.js");
+
+
 var afData = new Map();
 var usData = new Map();
-var diagCOVID = [
-	"J010", "J00X", "J011", "J012", "J013", "J014", "J018", "J019", "J020", "J028", "J029", "J030", "J038", "J039", "J040", "J041", "J042", "J050", "J051", "J060", "J068", "J069", "J09X", "J100", "J101", "J108", "J110", "J111", "J118", "J120", "J121", "J122", "J123", "J128", "J129", "J13X", "J14X", "J150", "J151", "J152", "J153", "J154", "J155", "J156", "J157", "J158", "J159", "J160", "J168", "J170", "J171", "J172", "J173", "J178", "J180", "J181", "J182", "J188", "J189", "J200", "J201", "J202", "J203", "J204", "J205", "J206", "J207", "J208", "J209", "J210", "J211", "J218", "J219", "J22X", "P220", "U071", "U072", "J440", "J441", "J46X", "J80X", "J81X", "J960", "J969"
-]
+var diagCOVID = CONFIGURACIONES.CONFIGURACIONES.diagnosticosCovid;
+
 /**
 ** Aquí termina la inclusión de las librerias necesarias
 */
@@ -21,36 +24,23 @@ var diagCOVID = [
 // Array que contiene el listado de facturas ___ PENDIENTE DE USO
 const listFacts = [];//["1822", "310897"];
 
-var facturasCovidDetectadas = [];
-var usuariosCovid = [];
+
 /** 
 * Método que permite identificar si falta algun archivo en la definición 
 */
-let readAllFile = new Promise((resolve, reject) => {
-	main = this;
-	var totalFiles = [];
-
-	fs.readdir(testFolder, (err, files) => {
-		requiredFiles.map((pre) => {
-			//console.log(pre);
-			var find = 0;
-			files.forEach((file) => {
-				if (pre == file.substr(0, 2)) {
-					find = 1;
-				}
-			});
-			if (find == 0) {
-				reject("No se encontró creado el archivo " + pre);
-			}
-		});
-		resolve({ data: files, users: new Map() });
-	});
-});
-
+const leerTodosLosArchivos = funcionesArchivosPlanos.readAllFile;
+const buscarDiagnosticosCovid = funcionesArchivosPlanos.buscarDiagnosticosCovid;
+const devolverFacturasYUsuariosCovid = funcionesArchivosPlanos.devolverFacturasYUsuariosCovid
+const buscarUsuariosCovid = funcionesArchivosPlanos.buscarUsuariosCovid;
+const buscarUsuarioEnArchivosAdicionalesPorFactura = funcionesArchivosPlanos.buscarUsuarioEnArchivosAdicionalesPorFactura;
+const buscarEnAf = funcionesArchivosPlanos.buscarEnAf;
+const generarArchivos = funcionesArchivosPlanos.generarArchivos;
 /**
-*TERMINA IDENTIFICACIÓN DE ARCHIVOS
-*/
+ * Escribe el archivo
+ */
 
+
+const escribirArchivo = funcionesArchivosPlanos.escribirArchivo;
 
 /**
 * PERMITE CREAR UN ARCHIVO por elemento de un array
@@ -60,293 +50,117 @@ const crearArchivo = (array) => new Promise((resolve, reject) => {
 	// console.log(array);
 
 	for (var file = 0; file < array.length; file++) {
-	
-		
+
+
 		let factura = array[file].fileName.substring(0, array[file].fileName.length - 4); // texto.value.substring(0, texto.value.length - 1);
 		factura = factura.substr(3);
-		if(file < 3)
-		{
+		if (file < 3) {
 			//console.log(facturasCovidDetectadas)
 		}
 		//console.log(factura);
-		if(facturasCovidDetectadas.includes(factura))
-		{	
-			
+		if (facturasCovidDetectadas.includes(factura)) {
+
 			escribirArchivo(array[file].folder, array[file].fileName, array[file].data).then(function () {
 			});
 		}
-		
+
 	}
 });
 
 
 
-/**
- * Escribe el archivo
- */
-const escribirArchivo = async (path, fileName, value) => new Promise((resolve, reject) => {
-	var dir = path;
-	if (!fs.existsSync("results")) {
-		fs.mkdirSync("results");
-	}
-
-	if (!fs.existsSync(dir)) {
-		fs.mkdirSync(dir);
-	}
-
-	fq.writeFile(path + fileName, value, function (err) {
-		if (err) return console.log(err);
-
-	});
-});
 
 
-
-
-const readUSFile =   (file, index) =>
-new Promise(function (resolve, reject) {
-	var data = fs.readFileSync("files/" + file, "latin1").toString().split("\n");
-		var newMap = new Map();
-
-		//Recorremos linea a linea un archivo plano
-		for (var numLinea = 0; numLinea < data.length; numLinea++) {
-			//Validamos que la linea no esté vacía
-			if (data[numLinea] != "") {
-				data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
-				lineaSplit = data[numLinea].split(",");
-
-
-
-				var findLine = newMap.get(lineaSplit[0]);
-				//  console.log(findLine);
-				if (findLine == undefined) {
-				
-					newMap.set(lineaSplit[index], { text: data[numLinea], count: 1 });
-					
-				} else {
-					
-					findLine.text = findLine.text.toString() + "\n" + data[numLinea].toString();
-					newMap.set(lineaSplit[index], {
-						text: findLine.text,
-						count: findLine.count + 1,
-					});
-				
-				}
-
-				
-			}
-		}
-		resolve({ file: file.substr(0, 2), data: newMap });
-
-});
-
-
-
-
-/**
- * Metodo que recorre un archivo y lo agrupa por un indice en un archivo
- */
-const readAditionalFiles = (file, index) =>
-	new Promise(function (resolve, reject) {
-		var data = fs.readFileSync("files/" + file, "latin1").toString().split("\n");
-		var newMap = new Map();
-
-		//Recorremos linea a linea un archivo plano
-		for (var numLinea = 0; numLinea < data.length; numLinea++) {
-			//Validamos que la linea no esté vacía
-			if (data[numLinea] != "") {
-				data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
-				lineaSplit = data[numLinea].split(",");
-
-				if (file.substr(0, 2) == "AC"  || file.substr(0, 2) == "AH" ) {
-					if (diagCOVID.includes(lineaSplit[9]) || diagCOVID.includes(lineaSplit[10]), diagCOVID.includes(lineaSplit[11])) {
-						if (!facturasCovidDetectadas.includes(lineaSplit[0])) {
-							facturasCovidDetectadas.push(lineaSplit[0]);
-						}
-
-						if (!usuariosCovid.includes(lineaSplit[3])) {
-							usuariosCovid.push(lineaSplit[3]);
-						}
-					}
-				}
-
-				if (file.substr(0, 2) == "AP" ) {
-					if (diagCOVID.includes(lineaSplit[10]) || diagCOVID.includes(lineaSplit[11]), diagCOVID.includes(lineaSplit[12])) {
-						if (!facturasCovidDetectadas.includes(lineaSplit[0])) {
-							facturasCovidDetectadas.push(lineaSplit[0]);
-						}
-
-						if (!usuariosCovid.includes(lineaSplit[3])) {
-							usuariosCovid.push(lineaSplit[3]);
-						}
-					}
-				}
-
-				if (file.substr(0, 2) == "AU") {
-					if (diagCOVID.includes(lineaSplit[8]) || diagCOVID.includes(lineaSplit[9]), diagCOVID.includes(lineaSplit[10])) {
-						if (!facturasCovidDetectadas.includes(lineaSplit[0])) {
-							facturasCovidDetectadas.push(lineaSplit[0]);
-						}
-
-						if (!usuariosCovid.includes(lineaSplit[3])) {
-							usuariosCovid.push(lineaSplit[3]);
-						}
-					}
-				}
-
-
-
-				var findLine = newMap.get(lineaSplit[0]);
-				//  console.log(findLine);
-				if (findLine == undefined) {
-					if (usuariosCovid.includes(lineaSplit[3])) {
-					newMap.set(lineaSplit[index], { text: data[numLinea], count: 1 });
-					}
-				} else {
-					if (usuariosCovid.includes(lineaSplit[3])) {
-					findLine.text = findLine.text.toString() + "\n" + data[numLinea].toString();
-					newMap.set(lineaSplit[index], {
-						text: findLine.text,
-						count: findLine.count + 1,
-					});
-				}
-				}
-
-				if (index == 0) {
-					let fact = afData.get(lineaSplit[index]);
-					if (fact != undefined) {
-						let factUsers = fact.users.get(lineaSplit[3]);
-						afData.get(lineaSplit[index]).users.set(lineaSplit[3], usData.data.get(lineaSplit[3]));
-					}
-				}
-			}
-		}
-		resolve({ file: file.substr(0, 2), data: newMap });
-	});
 
 /**
  * Controlador principal a partir del archivo ac
  */
-readAllFile
-	.then((files) => {
-		// console.time(1);
-		var AF = files.data.find((fileName) => fileName.substr(0, 2) == "AF");
 
-		try {
-			// var data = fs.readFileSync( 'utf8');
-			var data = fs.readFileSync("files/" + AF, "latin1").toString().split("\n");
-			for (var numLinea = 0; numLinea < data.length; numLinea++) {
+leerTodosLosArchivos.then((files) => {
+	//console.log("entro" ,files);
+	var AC = files.data.find((fileName) => fileName.substr(0, 2) == "AC");
+	var AH = files.data.find((fileName) => fileName.substr(0, 2) == "AH");
+	var AP = files.data.find((fileName) => fileName.substr(0, 2) == "AP");
+	var AU = files.data.find((fileName) => fileName.substr(0, 2) == "AU");
+	var US = files.data.find((fileName) => fileName.substr(0, 2) == "US");
 
-				if (data[numLinea] != "") {
-					data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
-					lineaSplit = data[numLinea].split(",");
-					if (listFacts.length > 0) {
-						const findAf = listFacts.find(element => element == lineaSplit[4]);//lineaSplit[4]);
-						// console.log(findAf);
-						if (!findAf) {
-							continue;
-						}
-					}
-					afData.set(lineaSplit[4], { data: data[numLinea], users: new Map(), date: lineaSplit[5], habCode: lineaSplit[0] });
-				}
-			}
-			//console.log(afData);
-			readUSFile(
-				files.data.find((fileName) => fileName.substr(0, 2) == "US"), 1
-			).then((usMap) => {
-				usData = usMap;
-				//  console.log(usData);
+	//Aquí empiezan los archivos que no devuelven diagCovid
+	var AD = files.data.find((fileName) => fileName.substr(0, 2) == "AD");
+	//AF es el indicador de facturas
+	var AF = files.data.find((fileName) => fileName.substr(0, 2) == "AF");
+	var AM = files.data.find((fileName) => fileName.substr(0, 2) == "AM");
+	var AN = files.data.find((fileName) => fileName.substr(0, 2) == "AN");
+	var AT = files.data.find((fileName) => fileName.substr(0, 2) == "AT");
 
-				Promise.all([
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AC"), 0),
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AH"), 0),
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AM"), 0),
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AN"), 0),
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AP"), 0),
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AT"), 0),
-					readAditionalFiles(files.data.find((fileName) => fileName.substr(0, 2) == "AU"), 0),
-				]).then(
-					(maps) => {
-						console.log();
+	Promise.all([
+		buscarDiagnosticosCovid(AC, 0,3, 9),
+		buscarDiagnosticosCovid(AH, 0,3, 9),
+		buscarDiagnosticosCovid(AP, 0,3, 10),
+		buscarDiagnosticosCovid(AU, 0,3, 8),
+	]).then(
+		(covidMaps) => {
+			//console.log(covidMaps[1] );
+			//console.log(maps);
+			buscarUsuariosCovid(US,1).then((usMap) => {
+				//usData = usMap;
+			
+					Promise.all([
+						buscarUsuarioEnArchivosAdicionalesPorFactura(AM, 0,3),
+						buscarUsuarioEnArchivosAdicionalesPorFactura(AN, 0,3),
+						buscarUsuarioEnArchivosAdicionalesPorFactura(AT, 0,3),
+						buscarEnAf(AF, 4)
+					]).then((mapsArchivosAdicionales) => {
+						//console.log("entre aqui");
+						Promise.all([
+							generarArchivos(covidMaps[0], AC),
+							generarArchivos(covidMaps[1], AH),
+							generarArchivos(covidMaps[2], AP),
+							generarArchivos(covidMaps[3], AU),
+							generarArchivos(mapsArchivosAdicionales[0], AM),
+							generarArchivos(mapsArchivosAdicionales[1], AN),
+							generarArchivos(mapsArchivosAdicionales[2], AT),
+							generarArchivos(mapsArchivosAdicionales[3], AF),
+							generarArchivos(usMap, US)						
 
-						const dynamicCreateFiles = (array, maps) => new Promise(function (resolve, reject) {
-
-							//  fsExtra.emptyDirSync("results");
-							rimraf("results/*", function () {
-								console.log("Borrando directorio");
-
-								for (let [key, value] of array) {
-									var lineCt = "";
-									// crearArchivo("results/" + key, "/AF" + key + ".txt", value.data);
-									lineCt = value.habCode + "," + value.date + ",AF" + key + ",1";
-									filesCreator.push({ folder: "results/" , fileName: "/AF" + key + ".txt", data: value.data });
-									for (var $fileReader = 0; $fileReader < maps.length; $fileReader++) {
-										let data = maps[$fileReader].data.get(key);
-
-										if (data != undefined) {
-											if (data.count > 0) {
-												lineCt = lineCt + "\n\r" + value.habCode + "," + value.date + "," + maps[$fileReader].file + key + "," + data.count;
-											}
-											filesCreator.push({ folder: "results/" , fileName: "/" + maps[$fileReader].file + key + ".txt", data: data.text });
-										}
-										else {
-											filesCreator.push({ folder: "results/" , fileName: "/" + maps[$fileReader].file + key + ".txt", data: "" });
-										}
-									}
-									// console.log(lineCt);
-									// console.log(afData.get("46091"));
-
-									//    
-
-									let usersPrinter = "";
-									let countUsers = 0;
-									//console.log(value.users);
-									for (let [keyUser, user] of value.users) {
-										
-										if (user != undefined  && usuariosCovid.includes(keyUser)  ) {
-											if (keyUser == 0) {
-												usersPrinter = user.text;
-											}
-											else {
-												usersPrinter = usersPrinter + user.text + "\n";
-											}
-										}
-
-										countUsers++;
-									}
-
-									filesCreator.push({ folder: "results/" , fileName: "/" + "US" + key + ".txt", data: usersPrinter });
-									lineCt = lineCt + "\n" + value.habCode + "," + value.date + ",US" + key + "," + countUsers;
-
-									filesCreator.push({ folder: "results/" , fileName: "/" + "CT" + key + ".txt", data: lineCt });
-									countUsers = 0;
-									usersPrinter = "";
-
-								}
-								// console.log(filesCreator);
-								resolve(filesCreator);
-							});
-
-
+						]).then((respuestaCreacionArchivos) => {
+							//escribirArchivo = async (path, fileName, value)
+							
+							escribirArchivo("results/" , AC,  respuestaCreacionArchivos[0].valueFile );
+							escribirArchivo("results/" , AH,  respuestaCreacionArchivos[1].valueFile );
+							escribirArchivo("results/" , AP,  respuestaCreacionArchivos[2].valueFile );
+							escribirArchivo("results/" , AU,  respuestaCreacionArchivos[3].valueFile );
+							escribirArchivo("results/" , AM,  respuestaCreacionArchivos[4].valueFile );
+							escribirArchivo("results/" , AN,  respuestaCreacionArchivos[5].valueFile );
+							escribirArchivo("results/" , AT,  respuestaCreacionArchivos[6].valueFile );
+							escribirArchivo("results/" , AF,  respuestaCreacionArchivos[7].valueFile );
+							escribirArchivo("results/" , US,  respuestaCreacionArchivos[8].valueFile );
+						
+							let nit = devolverFacturasYUsuariosCovid().NIT_IPS;
+							let fechaActual =   moment().format("DD/MM/YYYY");
+							let dataCT = nit + "," + fechaActual + "," + AC.substr(0,2) + "," +respuestaCreacionArchivos[0].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AH.substr(0,2) + "," +respuestaCreacionArchivos[1].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AP.substr(0,2) + "," +respuestaCreacionArchivos[2].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AU.substr(0,2) + "," +respuestaCreacionArchivos[3].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AM.substr(0,2) + "," +respuestaCreacionArchivos[4].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AN.substr(0,2) + "," +respuestaCreacionArchivos[5].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AT.substr(0,2) + "," +respuestaCreacionArchivos[6].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + AF.substr(0,2) + "," +respuestaCreacionArchivos[7].totalLineas+"\r\n";
+							dataCT  =dataCT+ nit + "," + fechaActual + "," + US.substr(0,2) + "," +respuestaCreacionArchivos[8].totalLineas+"\r\n";
+							escribirArchivo("results/" , "CT.txt",  dataCT );
 
 						});
 
-						dynamicCreateFiles(afData, maps).then(function (filesCreator) {
-							crearArchivo(filesCreator, 0);
-						});
 
+					
+					});
 
-					},
-					(reason) => {
-						console.log(reason);
-					}
-				);
 			});
-		} catch (e) {
-			console.log("Error:", e.stack);
-		}
-	})
-	.catch(function (err) {
+		})
+	
+
+
+
+}).catch(function (err) {
 		console.log(err);
-	});
+});
 
