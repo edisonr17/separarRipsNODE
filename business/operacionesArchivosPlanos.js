@@ -81,11 +81,14 @@ new Promise(function (resolve, reject) {
 		//Validamos que la linea no esté vacía
 		if (data[numLinea] != "") {
 			if(file.substr(0,2)=="AH"){
-				data[numLinea] = data[numLinea].substring(0, data[numLinea].length -1);
+				data[numLinea] = data[numLinea].substring(0, data[numLinea].length );
 			}
 		else{
-			data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
+			data[numLinea] = data[numLinea].substring(0, data[numLinea].length );
 		}
+
+		data[numLinea] = data[numLinea].replace(/(\r\n|\n|\r)/gm, "");
+
 			lineaSplit = data[numLinea].split(",");
 			
 			
@@ -147,7 +150,8 @@ new Promise(function (resolve, reject) {
 		for (var numLinea = 0; numLinea < data.length; numLinea++) {
 			//Validamos que la linea no esté vacía
 			if (data[numLinea] != "") {
-				data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
+				data[numLinea] = data[numLinea].substring(0, data[numLinea].length );
+				data[numLinea] = data[numLinea].replace(/(\r\n|\n|\r)/gm, "");
 				lineaSplit = data[numLinea].split(",");
 
 
@@ -184,7 +188,8 @@ new Promise(function (resolve, reject) {
 		for (var numLinea = 0; numLinea < data.length; numLinea++) {
 			//Validamos que la linea no esté vacía
 			if (data[numLinea] != "") {
-				data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
+				data[numLinea] = data[numLinea].substring(0, data[numLinea].length );
+				data[numLinea] = data[numLinea].replace(/(\r\n|\n|\r)/gm, "");
 				lineaSplit = data[numLinea].split(",");
 
 
@@ -225,12 +230,13 @@ new Promise(function (resolve, reject) {
 		for (var numLinea = 0; numLinea < data.length; numLinea++) {
 			//Validamos que la linea no esté vacía
 			if (data[numLinea] != "") {
-				data[numLinea] = data[numLinea].substring(0, data[numLinea].length - 2);
+				data[numLinea] = data[numLinea].substring(0, data[numLinea].length);
+				data[numLinea] = data[numLinea].replace(/(\r\n|\n|\r)/gm, "");
 				lineaSplit = data[numLinea].split(",");
 
 
 			if(facturasCovidDetectadas.includes(lineaSplit[indFac])) {
-				NIT_IPS = lineaSplit[3];
+				NIT_IPS = lineaSplit[0];
 				var findLine = newMap.get(lineaSplit[indFac]);
 				//  console.log(findLine);
 				if (findLine == undefined) {
